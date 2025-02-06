@@ -1,7 +1,8 @@
 llama-index
 llama-index-llms-groq
 python-dotenv
-langsmith
 llama-index-vector-stores-pinecone
 llama-index-readers-web
-llama-index-embeddings-huggingface
+llama-index-embeddings-gemini
+flask
+flask-socketio
