@@ -11,25 +11,20 @@ from pinecone import Pinecone
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.core import Settings
 from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilter
+from llama_index.core.node_parser import SentenceSplitter
 
 load_dotenv()
 
 
-def intialize_config():
-    """
-    loading and initializing all the global variables
-    """
-    global llm, embed_model, pc, index_name
+llm = Groq(api_key=os.getenv("GROQ_API_KEY"), model="llama-3.3-70b-versatile")
 
-    llm = Groq(api_key=os.getenv("GROQ_API_KEY"), model="llama-3.3-70b-versatile")
+embed_model = GeminiEmbedding(
+    model_name="models/text-embedding-004", api_key=os.getenv("GOOGLE_API_KEY")
+)
+Settings.embed_model = embed_model
 
-    embed_model = GeminiEmbedding(
-        model_name="models/text-embedding-004", api_key=os.getenv("GOOGLE_API_KEY")
-    )
-    Settings.embed_model = embed_model
-
-    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-    index_name = "scrap-embedding"
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+index_name = "fetch-chat"
 
 
 def clean_data(text: str) -> str:
@@ -63,19 +58,41 @@ def create_record(url: str, userId: str, namespace: str):
         document = SimpleWebPageReader(html_to_text=True).load_data([url])
         clean_text = clean_data(document[0].text)
 
-        doc_id = f"{userId}#{uuid.uuid4()}"
         metadata = {"url": url, "userId": userId}
-        upsert_document = [Document(id_=doc_id, text=clean_text, metadata=metadata)]
+        upsert_document = [Document(text=clean_text, metadata=metadata)]
+
+        splitter = SentenceSplitter(
+            chunk_size=1024,
+            chunk_overlap=20,
+            separator=" ",
+        )
+        nodes = splitter.get_nodes_from_documents(documents=upsert_document)
 
         vector_store = PineconeVectorStore(namespace=namespace, index_name=index_name)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        index = VectorStoreIndex(
-            [], embed_model=embed_model, storage_context=storage_context
+        VectorStoreIndex(
+            nodes=nodes, embed_model=embed_model, storage_context=storage_context
         )
-        index.insert(document=upsert_document[0])
-
     except Exception as e:
         print(f"An error occurred: {e}")
+
+
+def check_url_exists(namespace: str, url: str) -> bool:
+    try:
+        index = pc.Index(name=index_name)
+        recordIds = [ids for ids in index.list(namespace=namespace)]
+        if len(recordIds) == 0:
+            print("Empty records")
+            return False
+        else:
+            records = index.fetch(ids=recordIds[0], namespace=namespace).to_dict()
+            url = [val["metadata"]["url"] for val in records["vectors"].values()]
+
+            status = True if len(url) != 0 else False
+            return status
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
 
 
 def load_query_engine(namespace: str, url: str, userId: str):
@@ -99,5 +116,7 @@ def stream_response(query: str, namespace: str, url: str, userId: str):
     return response
 
 
-if __name__ == "__main__":
-    intialize_config()
+# url = "https://docs.pinecone.io/reference/api/2024-10/data-plane/fetch"
+# # create_record(url=url, userId="user-abhiram", namespace="tenant-abhiram")
+# status = check_url_exists("tenant-abhiram", url)
+# print(status)
