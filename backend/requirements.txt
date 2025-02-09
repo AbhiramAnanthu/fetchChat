@@ -1,0 +1,8 @@
+llama-index
+llama-index-llms-groq
+python-dotenv
+llama-index-vector-stores-pinecone
+llama-index-readers-web
+llama-index-embeddings-gemini
+fastapi
+websockets
