@@ -6,3 +6,4 @@ llama-index-readers-web
 llama-index-embeddings-gemini
 fastapi
 websockets
+uvicorn
