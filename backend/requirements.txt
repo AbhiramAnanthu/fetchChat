@@ -4,6 +4,5 @@ python-dotenv
 llama-index-vector-stores-pinecone
 llama-index-readers-web
 llama-index-embeddings-gemini
-flask
-flask-socketio
-eventlet
+fastapi
+websockets
