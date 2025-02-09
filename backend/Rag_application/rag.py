@@ -10,7 +10,11 @@ from llama_index.core import VectorStoreIndex, StorageContext, Document
 from pinecone import Pinecone
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.core import Settings
-from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilter
+from llama_index.core.vector_stores import (
+    MetadataFilter,
+    MetadataFilters,
+    FilterOperator,
+)
 from llama_index.core.node_parser import SentenceSplitter
 
 load_dotenv()
@@ -46,7 +50,7 @@ def clean_data(text: str) -> str:
     return remv_links
 
 
-def create_record(url: str, userId: str, namespace: str):
+def create_record(url: str, namespace: str):
     """
     Create a record in pinecone vector store
     steps
@@ -58,26 +62,23 @@ def create_record(url: str, userId: str, namespace: str):
         document = SimpleWebPageReader(html_to_text=True).load_data([url])
         clean_text = clean_data(document[0].text)
 
-        metadata = {"url": url, "userId": userId}
-        upsert_document = [Document(text=clean_text, metadata=metadata)]
-
-        splitter = SentenceSplitter(
-            chunk_size=1024,
-            chunk_overlap=20,
-            separator=" ",
-        )
-        nodes = splitter.get_nodes_from_documents(documents=upsert_document)
+        metadata = {"url": url}
+        upsert_document = Document(text=clean_text, metadata=metadata)
 
         vector_store = PineconeVectorStore(namespace=namespace, index_name=index_name)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        VectorStoreIndex(
-            nodes=nodes, embed_model=embed_model, storage_context=storage_context
+        index = VectorStoreIndex(
+            [], embed_model=embed_model, storage_context=storage_context
         )
+        index.insert(upsert_document)
     except Exception as e:
         print(f"An error occurred: {e}")
 
 
 def check_url_exists(namespace: str, url: str) -> bool:
+    """
+    Returns True if url exists, returns false if it does not exists
+    """
     try:
         index = pc.Index(name=index_name)
         recordIds = [ids for ids in index.list(namespace=namespace)]
@@ -95,28 +96,25 @@ def check_url_exists(namespace: str, url: str) -> bool:
         return False
 
 
-def load_query_engine(namespace: str, url: str, userId: str):
-    metadata_filter = MetadataFilter(
-        filters=[
-            ExactMatchFilter(key="userId", value=userId),
-            ExactMatchFilter(key="url", value=url),
-        ]
-    )
-    vector_store = PineconeVectorStore(namespace=namespace, index_name=index_name)
-    index = VectorStoreIndex.from_vector_store(
-        vector_store=vector_store, embed_model=embed_model
-    )
-    query_engine = index.as_query_engine(filters=metadata_filter, llm=llm)
-    return query_engine
+def load_query_engine(namespace: str, url: str):
+    try:
+        metadata_filter = MetadataFilters(
+            filters=[
+                MetadataFilter(key="url", value=url, operator=FilterOperator.EQ),
+            ]
+        )
+        vector_store = PineconeVectorStore(namespace=namespace, index_name=index_name)
+        index = VectorStoreIndex.from_vector_store(
+            vector_store=vector_store, embed_model=embed_model
+        )
+        query_engine = index.as_query_engine(filters=metadata_filter, llm=llm)
+        return query_engine
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
 
 def stream_response(query: str, namespace: str, url: str, userId: str):
-    query_engine = load_query_engine(namespace=namespace, url=url, userId=userId)
+    query_engine = load_query_engine(namespace=namespace, url=url)
     response = query_engine.query(query)
     return response
-
-
-# url = "https://docs.pinecone.io/reference/api/2024-10/data-plane/fetch"
-# # create_record(url=url, userId="user-abhiram", namespace="tenant-abhiram")
-# status = check_url_exists("tenant-abhiram", url)
-# print(status)

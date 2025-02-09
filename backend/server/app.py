@@ -1,44 +1,34 @@
-from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, emit, Namespace
-from Rag_application.rag import *
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from .middlewares import loading_middleware, query_middleware
 
-socketio = SocketIO(logger=True, engineio_logger=True, cors_allowed_origins="*")
-
-app = Flask(__name__)
-socketio.init_app(app)
+app = FastAPI()
 
 
-@app.route("/", methods=["GET"])
+@app.get("/")
 def index():
-    return {"message": "Welcome to FetchChat"}
+    return {"message": "Welcome to FetchChat api"}
 
 
-@app.route("/api/load-engine/<userId>", methods=["GET"])
-def load_engine(userId):
-    """
-    Request format
-    GET api/:userId/load_engine/?namespace="namespace"/?url="url"
-    """
-    namespace, url = request.args
-    if namespace and url:
-        status = check_url_exists(namespace=namespace, url=url)
-        if status:
-            create_record(url=url, userId=userId, namespace=namespace)
-        query_engine = load_query_engine(namespace=namespace, userId=userId, url=url)
+@app.websocket("/chat")
+async def chat(websocket: WebSocket):
+    print("[Connected] Client Connected")
 
+    await websocket.accept()
+    await websocket.send_text("Send the url in json format with namespace")
+    user_json = await websocket.receive_json()
+    url, namespace = user_json["url"], user_json["namespace"]
+    query_engine = loading_middleware(url, namespace)
+    if query_engine is not None:
+        await websocket.send_text("engine loaded")
+    else:
+        await websocket.send_text("Error loading query engine")
+    async for message in websocket.iter_text():
+        response = await query_middleware(query_engine, message)
+        if response.response:
+            await websocket.send_text(response.response)
 
-class ChatNameSpace(Namespace):
-    def on_connect(self):
-        emit("response", {"message": "Client connected"})
-
-    def on_disconnect(self):
-        emit("response", {"message": "Client disconnected"})
-
-    def on_message(self, data):
-        emit("message", data)
-
-
-socketio.on_namespace(ChatNameSpace("/chat"))
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    import uvicorn
+
+    uvicorn.run(app)
