@@ -32,7 +32,7 @@ class Home extends StatelessWidget {
       overlayColor: WidgetStateProperty.all(Colors.transparent),
       dividerColor: Colors.transparent,
       indicator: BoxDecoration(
-        color: Color.fromRGBO(135, 35, 65, 1),
+        color: Color(0xffe63946),
         borderRadius: BorderRadius.circular(50.0),
       ),
       tabs: [
