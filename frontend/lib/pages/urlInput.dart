@@ -3,6 +3,7 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:frontend/pages/chat_page.dart';
 import 'package:frontend/pages/singleton_websocket.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class UrlInput extends StatefulWidget {
   const UrlInput({super.key});
@@ -18,6 +19,8 @@ class _UrlInputState extends State<UrlInput> {
   bool isLoaded = false;
   bool _show_ready = false;
 
+  bool _show_loader = true;
+
   void _load_query_engine() {
     setState(() {
       _show_ready = true;
@@ -25,23 +28,32 @@ class _UrlInputState extends State<UrlInput> {
 
     final String fetch_uri = _controller.text;
 
-    final String uri = "";
+    final String uri = "ws://localhost:8000/chat";
 
     final String namespace = "tenant-abhiram";
 
-    _websocket_service.connect(uri);
+    try {
+      WebSocketChannel? _channel = WebSocketChannel.connect(Uri.parse(uri));
+    } on WebSocketChannelException catch (e) {
+      print(e);
+    }
 
-    _websocket_service.sendMessage({
-      "url": uri,
-      "namespace": namespace,
-    });
+    // _websocket_service.sendMessage({
+    //   "url": uri,
+    //   "namespace": namespace,
+    // }, _channel);
 
-    WebsocketService().messages.listen((message) {
-      if (message.toString().toLowerCase() == "loaded query engine") {
-        setState(() {
-          isLoaded = true;
-        });
-      }
+    // Stream channel_stream = _websocket_service.messages(_channel);
+    // channel_stream.listen((messages) {
+    //   if (messages.toString().toLowerCase() == "loaded query engine") {
+    //     isLoaded = true;
+    //   }
+    // });
+  }
+
+  void _cancel_loader() {
+    setState(() {
+      _show_loader = false;
     });
   }
 
@@ -102,28 +114,38 @@ class _UrlInputState extends State<UrlInput> {
             ]));
   }
 
-  Container _loader() {
-    return Container(
-      width: 300.0,
-      padding: EdgeInsets.only(top: 24.0),
-      alignment: Alignment.centerLeft,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            color: Color(0xffe63946),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: Text(
-              "Loading Query engine",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                  color: Colors.amber, fontWeight: FontWeight.bold),
+  Visibility _loader() {
+    return Visibility(
+      visible: _show_loader,
+      child: Container(
+        width: 400.0,
+        padding: EdgeInsets.only(top: 24.0),
+        alignment: Alignment.centerLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: Color(0xffe63946),
             ),
-          )
-        ],
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Text(
+                "Loading Query engine",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                    color: Colors.amber, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+              ),
+              onPressed: _cancel_loader,
+              child: Text("Cancel"),
+            )
+          ],
+        ),
       ),
     );
   }

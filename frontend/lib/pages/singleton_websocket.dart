@@ -6,31 +6,34 @@ class WebsocketService {
   WebsocketService._internal();
   static final WebsocketService _instance = WebsocketService._internal();
 
-  late WebSocketChannel _channel;
   bool is_connected = true;
 
   factory WebsocketService() {
     return _instance;
   }
 
-  void connect(String uri) {
+  WebSocketChannel? connect(String uri) {
     if (!is_connected) {
-      _channel = WebSocketChannel.connect(Uri.parse(uri));
+      WebSocketChannel _channel = WebSocketChannel.connect(Uri.parse(uri));
       is_connected = true;
+      return _channel;
     }
   }
 
-  Stream get messages => _channel.stream;
+  Stream messages(WebSocketChannel? channel) => channel!.stream;
 
-  void sendMessage(Map<String, dynamic> message) {
+  void sendMessage(Map<String, dynamic> message, WebSocketChannel? channel) {
+    if (channel == null) {
+      print("channel is null");
+    }
     if (is_connected) {
-      _channel.sink.add(jsonEncode(message));
+      channel!.sink.add(jsonEncode(message));
     }
   }
 
-  void closeConnection() {
+  void closeConnection(WebSocketChannel? channel) {
     if (is_connected) {
-      _channel.sink.close(status.goingAway);
+      channel!.sink.close(status.goingAway);
       is_connected = false;
     }
   }
