@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/homeBody.dart';
-import 'package:frontend/pages/urlInput.dart';
+import 'package:frontend/pages/url_input.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
@@ -12,7 +12,7 @@ class Home extends StatelessWidget {
       bottomNavigationBar: _tabBar(),
       body: const TabBarView(children: [
         HomeBody(),
-        UrlInput(),
+        InputUrl(),
         Text("hello"),
         Center(
           child: Text(
