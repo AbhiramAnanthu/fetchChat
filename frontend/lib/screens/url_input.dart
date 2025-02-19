@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:frontend/pages/websocket_model.dart';
+import 'package:frontend/screens/chat_page.dart';
+import 'package:frontend/models/websocket_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -28,10 +30,11 @@ class _InputUrlState extends State<InputUrl> {
       "namespace": "tenant-abhiram",
     };
 
-    _instance.sendMessage(data);
+    _instance.initStream();
+    _instance.channel.sink.add(jsonEncode(data));
 
-    _instance.messages.listen((message) {
-      if (message.toString().toLowerCase() == "engine loaded") {
+    _instance.messages.listen((msg) {
+      if (msg.toLowerCase() == "engine loaded") {
         setState(() {
           _is_loaded = true;
         });
@@ -41,7 +44,7 @@ class _InputUrlState extends State<InputUrl> {
 
   void onTextChange() {
     setState(() {
-      _show_clear_button = false;
+      _show_clear_button = _controller.text.isNotEmpty;
     });
   }
 
@@ -89,6 +92,7 @@ class _InputUrlState extends State<InputUrl> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: TextField(
+              controller: _controller,
               decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(50.0),
@@ -140,7 +144,29 @@ class _InputUrlState extends State<InputUrl> {
                   ),
                   fixedSize: Size(100.0, 50.0),
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      transitionDuration: Duration(milliseconds: 400),
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          ChatScreen(),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                        const begin = Offset(1.0, 0.0); // Starts from right
+                        const end = Offset.zero;
+                        const curve = Curves.easeInOut;
+                        var tween = Tween(begin: begin, end: end)
+                            .chain(CurveTween(curve: curve));
+
+                        return SlideTransition(
+                          position: animation.drive(tween),
+                          child: child,
+                        );
+                      },
+                    ),
+                  );
+                },
                 child: Text(
                   "Ready",
                   style: GoogleFonts.poppins(

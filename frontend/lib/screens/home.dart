@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/pages/homeBody.dart';
-import 'package:frontend/pages/url_input.dart';
+import 'package:frontend/screens/homeBody.dart';
+import 'package:frontend/screens/url_input.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
