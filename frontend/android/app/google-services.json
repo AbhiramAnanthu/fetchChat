@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "197181622848",
+    "project_id": "fetchchat-e0418",
+    "storage_bucket": "fetchchat-e0418.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:197181622848:android:9d67ea25b1862f4f786da5",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCiYi-yUIZDGtOdxYyjaXQg972m-Q8Qrs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
