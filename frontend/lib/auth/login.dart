@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/auth/authService.dart';
 import 'package:frontend/auth/signup.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+  LoginPage({super.key});
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +87,8 @@ class LoginPage extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
             child: TextField(
+              style: GoogleFonts.poppins(color: Colors.white),
+              controller: _emailController,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
@@ -97,6 +103,9 @@ class LoginPage extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
             child: TextField(
+              style: GoogleFonts.poppins(color: Colors.white),
+              obscureText: true,
+              controller: _passwordController,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
@@ -117,7 +126,12 @@ class LoginPage extends StatelessWidget {
                 fixedSize: Size(150, 50),
                 backgroundColor: Color(0xffe63946),
               ),
-              onPressed: () {},
+              onPressed: () {
+                AuthService().signIn(
+                    email: _emailController.text,
+                    password: _passwordController.text,
+                    context: context);
+              },
               child: Text(
                 "Login",
                 style: GoogleFonts.poppins(

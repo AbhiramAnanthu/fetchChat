@@ -82,8 +82,10 @@ class SignUp extends StatelessWidget {
                   fixedSize: Size(150, 50)),
               onPressed: () async {
                 AuthService().signUp(
-                    email: _emailController.text,
-                    password: _passwordController.text);
+                  email: _emailController.text,
+                  password: _passwordController.text,
+                  context: context,
+                );
               },
               child: Text(
                 "SignUp",
