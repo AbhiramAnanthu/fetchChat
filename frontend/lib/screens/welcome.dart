@@ -10,7 +10,6 @@ class HomeBody extends StatefulWidget {
 }
 
 class _HomeBodyState extends State<HomeBody> {
-  void setIsLoggedIn() {}
   @override
   Widget build(BuildContext context) {
     return Scaffold(

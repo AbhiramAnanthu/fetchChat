@@ -16,6 +16,8 @@ from llama_index.core.vector_stores import (
     FilterOperator,
 )
 from llama_index.core.node_parser import SentenceSplitter
+from pydantic import ValidationError
+
 
 load_dotenv()
 
@@ -60,8 +62,9 @@ def create_record(url: str, namespace: str):
     """
     try:
         document = SimpleWebPageReader(html_to_text=True).load_data([url])
+        if len(document) <= 0:
+            raise ValueError("WebPage error")
         clean_text = clean_data(document[0].text)
-
         metadata = {"url": url}
         upsert_document = Document(text=clean_text, metadata=metadata)
 
@@ -71,6 +74,10 @@ def create_record(url: str, namespace: str):
             [], embed_model=embed_model, storage_context=storage_context
         )
         index.insert(upsert_document)
+    except ValidationError as e:
+        print(f"Error on Namespace or index: {e}")
+    except ValueError as e:
+        print(f"Site Error: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
 
@@ -87,9 +94,10 @@ def check_url_exists(namespace: str, url: str) -> bool:
             return False
         else:
             records = index.fetch(ids=recordIds[0], namespace=namespace).to_dict()
-            url = [val["metadata"]["url"] for val in records["vectors"].values()]
+            results = [val["metadata"]["url"] for val in records["vectors"].values()]
 
-            status = True if len(url) != 0 else False
+            required_url = [res for res in results if res == url]
+            status = True if len(required_url) != 0 else False
             return status
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -112,9 +120,3 @@ def load_query_engine(namespace: str, url: str):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
-
-
-def stream_response(query: str, namespace: str, url: str, userId: str):
-    query_engine = load_query_engine(namespace=namespace, url=url)
-    response = query_engine.query(query)
-    return response

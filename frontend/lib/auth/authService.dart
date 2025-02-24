@@ -13,9 +13,6 @@ class AuthService {
     try {
       await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
-
-      await Future.delayed(const Duration(seconds: 1));
-
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => Home()));
     } on FirebaseAuthException catch (e) {
@@ -43,8 +40,6 @@ class AuthService {
     try {
       await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
-
-      await Future.delayed(const Duration(seconds: 1));
 
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => Home()));
